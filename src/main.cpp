@@ -2,13 +2,13 @@
 #include "BluetoothSerial.h"
 #include <Ticker.h>
 
-//#define INTERRUPT 1000
+// #define INTERRUPT 1000
 #define PIN_34 34
 #define A0 34
 #define alph 0.85
 #define sample_size 10
 
-int sampleData[sample_size] {};
+int sampleData[sample_size]{};
 bool sendDataFlag = false;
 
 long sumControlPl1 = 0;
@@ -19,15 +19,19 @@ String msg;
 Ticker ticker;
 unsigned long timer;
 
-void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
-  if (event == ESP_SPP_SRV_OPEN_EVT) {
+void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+{
+  if (event == ESP_SPP_SRV_OPEN_EVT)
+  {
     Serial.println("Client Connected");
-    
+
     Serial.println("Client Connected has address:");
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 6; i++)
+    {
       Serial.printf("%02X", param->srv_open.rem_bda[i]);
-      if (i < 5) {
+      if (i < 5)
+      {
         Serial.print(":");
       }
     }
@@ -35,35 +39,43 @@ void callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param) {
   }
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   SerialBT.register_callback(callback);
 
-  if (!SerialBT.begin("ESP32")) {
+  if (!SerialBT.begin("ESP32"))
+  {
     Serial.println("An error occurred initializing Bluetooth");
   }
-  else {
+  else
+  {
     Serial.println("Bluetooth initialized");
   }
   analogReadResolution(10);
 }
 
-void loop() {
-  if (SerialBT.available()) {
+void loop()
+{
+  if (SerialBT.available())
+  {
     char ch = SerialBT.read();
     Serial.println(ch);
-    //Serial.write(SerialBT.read());
-    if(ch == 'L') localGame();
-    if(ch == 'B') bossGame();
+    // Serial.write(SerialBT.read());
+    if (ch == 'L')
+      localGame();
+    if (ch == 'B')
+      bossGame();
     delay(10);
   }
-  
+
   //  Serial.println(analogRead(PIN_34));
   //  delay(100);
 }
 
-void localGame(){
+void localGame()
+{
   SerialBT.print("The game will start in 3...");
   delay(900);
   SerialBT.print("2...");
@@ -79,14 +91,14 @@ void localGame(){
   short dataPl1 = 0;
   while (millis() - timer < 10000)
   {
-    //SerialBT.print(analogRead(PIN_34));
-    // dataPl1 = filterData(analogRead(PIN_34), dataPl1);
-    dataPl1 = random(700,999);
-    short dataPl2 = random(160,999);
+    // SerialBT.print(analogRead(PIN_34));
+    //  dataPl1 = filterData(analogRead(PIN_34), dataPl1);
+    dataPl1 = random(700, 999);
+    short dataPl2 = random(160, 999);
     sumControlPl1 += dataPl1;
     sumControlPl2 += dataPl2;
     String sendData = String("<") + dataPl1 + "," + dataPl2 + ">";
-   
+
     SerialBT.print(sendData);
     Serial.println(sendData);
 
@@ -101,7 +113,8 @@ void localGame(){
   sumControlPl2 = 0;
 }
 
-void bossGame(){
+void bossGame()
+{
   SerialBT.print("The game will start in 3...");
   delay(900);
   SerialBT.print("2...");
@@ -114,15 +127,15 @@ void bossGame(){
   delay(50);
   timer = millis();
 
-  long dataPl1 = 0;
+  int dataPl1 = 0;
   while (millis() - timer < 20000)
   {
-    //SerialBT.print(analogRead(PIN_34));
-    // dataPl1 = filterData(analogRead(PIN_34), dataPl1);
-    dataPl1 = random(700,999);
+    //  dataPl1 = filterData(analogRead(PIN_34), dataPl1);
+    // dataPl1 = standardDeviation();
+    dataPl1 = random(700, 999);
     sumControlPl1 += dataPl1;
     String sendData = String("<") + dataPl1 + ">";
-   
+
     SerialBT.print(sendData);
     Serial.println(sendData);
 
@@ -134,30 +147,36 @@ void bossGame(){
   sumControlPl1 = 0;
 }
 
-short filterData(short sensorData, short oldData){
+short filterData(short sensorData, short oldData)
+{
   return alph * sensorData + (1 - alph) * oldData;
 }
 
-bool standardDeviation(int data){
-  if (sampleData[sample_size - 1] == 0)
+int standardDeviation()
+{
+  int dataPl1 = 0;
+  for (size_t i = 0; i < sample_size; i++)
   {
-    /* code */
-  } else {
-    int average = 0;
-    long long result = 0;
-    for (size_t i = 0; i < sample_size; i++)
-    {
-      average += sampleData[i];
-    }
-    average /= sample_size;
-    for (size_t i = 0; i < sample_size; i++)
-    {
-      sampleData[i] -= average;
-      sampleData[i] *= sampleData[i];
-      result += sampleData[i];
-    }
-    result /= (sample_size - 1);
-    result = sqrt(result);
+    dataPl1 = filterData(analogRead(PIN_34), dataPl1);
+    sampleData[i] = dataPl1;
+    delay(3);
   }
-  
+
+  int average = 0;
+  long long result = 0;
+  for (size_t i = 0; i < sample_size; i++)
+  {
+    average += sampleData[i];
+  }
+  average /= sample_size;
+  for (size_t i = 0; i < sample_size; i++)
+  {
+    sampleData[i] -= average;
+    sampleData[i] *= sampleData[i];
+    result += sampleData[i];
+  }
+  result /= (sample_size - 1);
+  result = sqrt(result);
+
+  return result;
 }
