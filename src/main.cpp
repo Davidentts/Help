@@ -5,10 +5,14 @@
 //#define INTERRUPT 1000
 #define PIN_34 34
 #define A0 34
+#define alph 0.85
+#define sample_size 10
+
+int sampleData[sample_size] {};
+bool sendDataFlag = false;
 
 long sumControlPl1 = 0;
 long sumControlPl2 = 0;
-bool filterFlag = true;
 
 BluetoothSerial SerialBT;
 String msg;
@@ -57,8 +61,6 @@ void loop() {
   
   //  Serial.println(analogRead(PIN_34));
   //  delay(100);
-  Serial.write(A0);
-  Serial.write(map(analogRead(A0), 0, 1023, 0 , 255));
 }
 
 void localGame(){
@@ -133,19 +135,29 @@ void bossGame(){
 }
 
 short filterData(short sensorData, short oldData){
-  if (sensorData < 50 || sensorData > 999)
+  return alph * sensorData + (1 - alph) * oldData;
+}
+
+bool standardDeviation(int data){
+  if (sampleData[sample_size - 1] == 0)
   {
-    return 999;
-  }
-  if (sensorData < 100)
-  {
-    return 160;
+    /* code */
+  } else {
+    int average = 0;
+    long long result = 0;
+    for (size_t i = 0; i < sample_size; i++)
+    {
+      average += sampleData[i];
+    }
+    average /= sample_size;
+    for (size_t i = 0; i < sample_size; i++)
+    {
+      sampleData[i] -= average;
+      sampleData[i] *= sampleData[i];
+      result += sampleData[i];
+    }
+    result /= (sample_size - 1);
+    result = sqrt(result);
   }
   
-  if (sensorData > 500 && sensorData < 650 && filterFlag)
-  {
-    filterFlag = true;
-    return sensorData - 100; 
-  }
-  return sensorData;
 }
