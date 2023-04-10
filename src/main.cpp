@@ -69,9 +69,10 @@ void loop()
       bossGame();
     delay(10);
   }
-
-  //  Serial.println(analogRead(PIN_34));
-  //  delay(100);
+  // int k = standardDeviation();
+  // String sendData = String("<") + k + ">";
+  // Serial.println(sendData);
+  // delay(50);
 }
 
 void localGame()
@@ -93,8 +94,13 @@ void localGame()
   {
     // SerialBT.print(analogRead(PIN_34));
     //  dataPl1 = filterData(analogRead(PIN_34), dataPl1);
-    dataPl1 = random(700, 999);
-    short dataPl2 = random(160, 999);
+    // dataPl1 = random(700, 999);
+    dataPl1 = standardDeviation();
+    short dataPl2 = random(100, 500);
+    if (dataPl1 < 100)
+      dataPl1 = 100;
+    if (dataPl2 < 100)
+      dataPl2 = 100;
     sumControlPl1 += dataPl1;
     sumControlPl2 += dataPl2;
     String sendData = String("<") + dataPl1 + "," + dataPl2 + ">";
@@ -102,7 +108,7 @@ void localGame()
     SerialBT.print(sendData);
     Serial.println(sendData);
 
-    delay(300);
+    delay(200);
   }
   SerialBT.print("FINISH!");
   Serial.print("Контрольная сумма игрока №1: ");
@@ -131,15 +137,19 @@ void bossGame()
   while (millis() - timer < 20000)
   {
     //  dataPl1 = filterData(analogRead(PIN_34), dataPl1);
-    // dataPl1 = standardDeviation();
-    dataPl1 = random(700, 999);
+    dataPl1 = standardDeviation();
+    // dataPl1 = random(700, 999);
     sumControlPl1 += dataPl1;
-    String sendData = String("<") + dataPl1 + ">";
+    String sendData;
+    if(dataPl1 < 100)
+      sendData = String("<0") + dataPl1 + ">";  
+      else 
+        sendData = String("<") + dataPl1 + ">";
 
     SerialBT.print(sendData);
     Serial.println(sendData);
 
-    delay(300);
+    delay(200);
   }
   SerialBT.print("FINISH!");
   Serial.print("Контрольная сумма игрока №1: ");
@@ -177,6 +187,6 @@ int standardDeviation()
   }
   result /= (sample_size - 1);
   result = sqrt(result);
-
-  return result;
+  average = result;
+  return average;
 }
